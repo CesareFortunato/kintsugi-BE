@@ -1,0 +1,12 @@
+{
+  "name": "kintsugi-be",
+  "version": "1.0.0",
+  "description": "e-commerce di profumi artigianali",
+  "license": "ISC",
+  "author": "Cesare Fortunato, Alessia Improta, Niccolo Rojas, Leonardo Sereni",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
