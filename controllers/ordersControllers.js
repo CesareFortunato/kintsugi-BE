@@ -5,8 +5,8 @@ function store(req, res) {
   const { customer, cart, shipping, billing, totals } = req.body;
 
   const sqlOrder = `INSERT INTO orders 
-    (customer_first_name, customer_last_name, customer_email, subtotal, shipping, discount, total, status, placed_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`;
+            (customer_first_name, customer_last_name, customer_email, subtotal, shipping, discount, total, status, placed_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`;
 
   connection.query(
     sqlOrder,
@@ -28,7 +28,7 @@ function store(req, res) {
       const orderId = orderResult.insertId;
 
       const sqlShipping = `INSERT INTO order_shipping_addresses 
-        (order_id, country, city, postal_code, address_line1) VALUES (?, ?, ?, ?, ?)`;
+                (order_id, country, city, postal_code, address_line1) VALUES (?, ?, ?, ?, ?)`;
 
       connection.query(
         sqlShipping,
@@ -48,8 +48,8 @@ function store(req, res) {
           }
 
           const sqlBilling = `INSERT INTO order_billing_addresses 
-            (order_id, country, city, postal_code, address_line1, vat_number) 
-            VALUES (?, ?, ?, ?, ?, ?)`;
+                    (order_id, country, city, postal_code, address_line1, vat_number) 
+                    VALUES (?, ?, ?, ?, ?, ?)`;
 
           connection.query(
             sqlBilling,
@@ -72,8 +72,8 @@ function store(req, res) {
               let completedInserts = 0;
               cart.forEach((item) => {
                 const sqlItem = `INSERT INTO order_items 
-                  (order_id, product_id, product_name, qty, unit_price) 
-                  VALUES (?, ?, ?, ?, ?)`;
+                        (order_id, product_id, product_name, qty, unit_price) 
+                        VALUES (?, ?, ?, ?, ?)`;
 
                 connection.query(
                   sqlItem,
