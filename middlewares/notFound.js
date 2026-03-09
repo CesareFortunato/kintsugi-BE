@@ -3,7 +3,7 @@ function notFound(req, res, next) {
 
   res.json({
     error: "not found",
-    messagge: "Pagina non trovata",
+    messagge: "Pagina non trovata!",
   });
 }
 

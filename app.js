@@ -9,6 +9,8 @@ const errorsHandler = require("./middlewares/errorsHandler");
 const parfumesRoutes = require("./routes/parfumesRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
 
+app.use("/parfumes", parfumesRoutes);
+
 //middlewares
 app.use(express.static("public"));
 app.use(cors({ origin: "http://localhost:5173" }));
