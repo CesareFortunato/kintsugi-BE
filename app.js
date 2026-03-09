@@ -8,6 +8,8 @@ const errorsHandler = require("./middlewares/errorsHandler");
 //importo i routes
 const parfumesRoutes = require("./routes/parfumesRoutes");
 
+app.use("/parfumes", parfumesRoutes);
+
 //middlewares
 app.use(express.static("public"));
 app.use(cors({ origin: "http://localhost:5173" }));
@@ -20,7 +22,7 @@ app.get("/", (req, res) => {
   res.send("ciaone");
 });
 
-app.use("/parfumes", parfumesRoutes);
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
