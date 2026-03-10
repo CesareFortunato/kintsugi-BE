@@ -47,5 +47,45 @@ function show(req, res) {
     });
   });
 }
-//esporto
-module.exports = { index, show };
+
+function getNote(req, res) {
+  const { noteId } = req.params;
+
+  const sql = `
+    SELECT products.*
+    FROM products
+    JOIN note_product ON products.id = note_product.product_id
+    WHERE note_product.note_id = ?`;
+
+  connection.query(sql, [noteId], (err, productsResults) => {
+    if (err) return res.status(500).json({ error: "Database query failed" });
+
+    if (productsResults.length === 0) {
+      return res.status(404).json({ message: "Nessun profumo trovato" });
+    }
+
+    const productIds = productsResults.map((product) => product.id);
+
+    const notesSql = `
+      SELECT notes.*, note_product.product_id 
+      FROM notes
+      JOIN note_product ON notes.id = note_product.note_id
+      WHERE note_product.product_id IN (?)
+    `;
+
+    connection.query(notesSql, [productIds], (err, notesResults) => {
+      if (err) return res.status(500).json({ error: "Nessun profumo trovato" });
+
+      const results = productsResults.map((product) => {
+        return {
+          ...product,
+          notes: notesResults.filter((n) => n.product_id === product.id),
+        };
+      });
+
+      res.json(results);
+    });
+  });
+}
+
+module.exports = { index, show, getNote };

@@ -7,4 +7,6 @@ router.get("/", parfumesControllers.index);
 
 router.get("/:public_slug", parfumesControllers.show);
 
+router.get("/note/:noteId", parfumesControllers.getNote);
+
 module.exports = router;
