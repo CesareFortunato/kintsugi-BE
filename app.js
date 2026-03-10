@@ -8,6 +8,7 @@ const errorsHandler = require("./middlewares/errorsHandler");
 //importo i routes
 const parfumesRoutes = require("./routes/parfumesRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
+const discountRoutes = require("./routes/discountRoutes");
 
 //middlewares
 app.use(express.static("public"));
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 
 app.use("/parfumes", parfumesRoutes);
 app.use("/orders", ordersRoutes);
+app.use("/discount", discountRoutes);
 
 app.use(errorsHandler);
 app.use(notFound);
