@@ -1,5 +1,4 @@
 const connection = require("../data/db");
-const { connect } = require("../routes/discountRoutes");
 
 function index(req, res) {
   const sql = "SELECT * FROM products WHERE original_price IS NOT NULL";

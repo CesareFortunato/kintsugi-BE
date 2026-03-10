@@ -1,4 +1,3 @@
-const { connect } = require("../routes/parfumesRoutes");
 const connection = require("../data/db");
 
 function index(req, res) {
@@ -14,6 +13,7 @@ function index(req, res) {
 function show(req, res) {
   const { public_slug } = req.params;
 
+  //console.log("1. Cerco lo slug:", public_slug);
   const parfumesSql = "SELECT * FROM products WHERE public_slug = ?";
 
   connection.query(parfumesSql, [public_slug], (err, parfumeResult) => {
@@ -23,6 +23,8 @@ function show(req, res) {
 
     const parfume = parfumeResult[0];
     const parfumeId = parfume.id;
+
+    //console.log("4. ID trovato:", parfumeId);
 
     const imagesSql = "SELECT * FROM  product_images WHERE product_id = ? ";
     connection.query(imagesSql, [parfumeId], (err, imageResult) => {

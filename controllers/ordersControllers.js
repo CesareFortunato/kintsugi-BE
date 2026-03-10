@@ -1,8 +1,7 @@
 const connection = require("../data/db");
-const { connect } = require("../routes/ordersRoutes");
 
 function store(req, res) {
-  const { customer, cart, shipping, billing, totals } = req.body;
+  const { customer, shipping, billing, totals } = req.body;
 
   const sqlOrder = `INSERT INTO orders 
             (customer_first_name, customer_last_name, customer_email, subtotal, shipping, discount, total, status, placed_at) 
@@ -69,39 +68,9 @@ function store(req, res) {
                   .json({ error: "Errore indirizzo fatturazione" });
               }
 
-              let completedInserts = 0;
-              let hasErrorOccurred = false;
-              cart.forEach((item) => {
-                const sqlItem = `INSERT INTO order_items 
-        (order_id, product_id, product_name, qty, unit_price) 
-        VALUES (?, ?, ?, ?, ?)`;
-
-                connection.query(
-                  sqlItem,
-                  [orderId, item.id, item.name, item.qty, item.price],
-                  (err) => {
-                    if (err) {
-                      console.error("ERRORE", err.message);
-                      if (!hasErrorOccurred) {
-                        hasErrorOccurred = true;
-                        return res.status(400).json({
-                          error:
-                            "Impossibile creare l'ordine: uno dei prodotti non esiste o i dati sono errati.",
-                          details: err.message,
-                        });
-                      }
-                      return;
-                    }
-
-                    completedInserts++;
-                    if (completedInserts === cart.length && !hasErrorOccurred) {
-                      return res.status(201).json({
-                        message: "Ordine completato con successo!",
-                        orderId,
-                      });
-                    }
-                  },
-                );
+              return res.status(201).json({
+                message: "Ordine creato con successo!",
+                orderId: orderId,
               });
             },
           );
