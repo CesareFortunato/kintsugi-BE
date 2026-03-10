@@ -81,7 +81,7 @@ function store(req, res) {
                   [orderId, item.id, item.name, item.qty, item.price],
                   (err) => {
                     if (err) {
-                      console.error("ERRORE FOREIGN KEY O DB:", err.message);
+                      console.error("ERRORE", err.message);
                       if (!hasErrorOccurred) {
                         hasErrorOccurred = true;
                         return res.status(400).json({
