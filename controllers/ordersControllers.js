@@ -91,33 +91,3 @@ function store(req, res) {
 
 module.exports = { store };
 
-exports.store = (req, res) => {
-
-    try {
-
-        const payload = req.body;
-
-        console.log("Ordine ricevuto:", payload);
-
-        
-        const orderNumber = Math.floor(100000 + Math.random() * 900000);
-
-        
-
-        res.json({
-            success: true,
-            orderNumber: orderNumber
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Errore creazione ordine"
-        });
-
-    }
-
-};
