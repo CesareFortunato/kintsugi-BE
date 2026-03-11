@@ -82,4 +82,25 @@ function store(req, res) {
   );
 }
 
-module.exports = { store };
+function show(req, res) {
+  const { id } = req.params;
+  const sqlOrder = `SELECT * FROM orders WHERE id = ?`;
+  connection.query(sqlOrder, [id], (err, orderResults) => {
+    if (err || orderResults.length === 0) {
+      return res.status(404).json({ error: "Ordine non trovato" });
+    }
+    const order = orderResults[0];
+    const sqlShipping = `SELECT * FROM order_shipping_addresses WHERE order_id = ?`;
+    connection.query(sqlShipping, [id], (err, shippingResults) => {
+      const sqlItems = `SELECT * FROM order_items WHERE order_id = ?`;
+      connection.query(sqlItems, [id], (err, itemsResults) => {
+        res.json({
+          order: order,
+          shipping: shippingResults[0],
+          items: itemsResults,
+        });
+      });
+    });
+  });
+}
+module.exports = { store, show };
