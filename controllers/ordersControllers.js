@@ -1,42 +1,40 @@
 const connection = require("../data/db");
 
 function store(req, res) {
-  //proprietà che inserite nella richiesa
-  const { customer, shipping, billing, totals } = req.body;
+  const { customer, shipping, billing, items } = req.body;
 
-  //inserisco in orders i valori del db, messo pending al momento e NOW() mi stamperà nel db
-  //il momento esatto in cui è avvenuto l'ordine
-  const sqlOrder = `INSERT INTO orders 
-            (customer_first_name, customer_last_name, customer_email, subtotal, shipping, discount, total, status, placed_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`;
+  let subtotal = 0;
+  const itemsToInsert = [];
 
-  //passo nella query tutto 5.0 è un prezzo di spedizione fittizio
+  items.forEach((item) => {
+    const discountedPrice = item.price * (1 - (item.discount_value || 0) / 100);
+    subtotal += discountedPrice * item.qty;
+
+    itemsToInsert.push([null, item.id, item.name, item.qty, discountedPrice]);
+  });
+
+  const shippingCost = subtotal >= 200 ? 0 : 5;
+  const total = subtotal + shippingCost;
+
+  const sqlOrder = `INSERT INTO orders (customer_email, customer_first_name, customer_last_name, subtotal, shipping, total, status, placed_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())`;
+
   connection.query(
     sqlOrder,
     [
+      customer.email,
       customer.firstName,
       customer.lastName,
-      customer.email,
-      totals.subtotal,
-      5.0,
-      0,
-      totals.total,
+      subtotal,
+      shippingCost,
+      total,
     ],
-    (err, orderResult) => {
-      //gestione errore
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Errore creazione ordine" });
-      }
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Errore Ordine" });
 
-      //salvo id per il collegamento con gli indirizzi
-      const orderId = orderResult.insertId;
+      const orderId = result.insertId;
 
-      //preparazione query
-      const sqlShipping = `INSERT INTO order_shipping_addresses 
-                (order_id, country, city, postal_code, address_line1) VALUES (?, ?, ?, ?, ?)`;
-
-      //Passo i dati dalla richiesta tra cui l'id dell'ordine
+      const sqlShipping = `INSERT INTO order_shipping_addresses (order_id, country, city, postal_code, address_line1) VALUES (?, ?, ?, ?, ?)`;
       connection.query(
         sqlShipping,
         [
@@ -46,19 +44,8 @@ function store(req, res) {
           shipping.zip,
           shipping.address,
         ],
-        (err) => {
-          if (err) {
-            //Gestione errore
-            console.error(err);
-            return res
-              .status(500)
-              .json({ error: "Errore indirizzo spedizione" });
-          }
-
-          const sqlBilling = `INSERT INTO order_billing_addresses 
-                    (order_id, country, city, postal_code, address_line1, vat_number) 
-                    VALUES (?, ?, ?, ?, ?, ?)`;
-
+        () => {
+          const sqlBilling = `INSERT INTO order_billing_addresses (order_id, country, city, postal_code, address_line1, vat_number) VALUES (?, ?, ?, ?, ?, ?)`;
           connection.query(
             sqlBilling,
             [
@@ -69,17 +56,23 @@ function store(req, res) {
               billing.address,
               billing.vat || "",
             ],
-            (err) => {
-              if (err) {
-                console.error(err);
-                return res
-                  .status(500)
-                  .json({ error: "Errore indirizzo fatturazione" });
-              }
+            () => {
+              const finalItems = itemsToInsert.map((row) => {
+                row[0] = orderId;
+                return row;
+              });
 
-              return res.status(201).json({
-                message: "Ordine creato con successo!",
-                orderId: orderId,
+              const sqlItems = `INSERT INTO order_items (order_id, product_id, product_name, qty, unit_price) VALUES ?`;
+
+              connection.query(sqlItems, [finalItems], (err) => {
+                if (err)
+                  return res.status(500).json({ error: "Errore Prodotti" });
+
+                res.status(201).json({
+                  message: "Ordine creato con successo!",
+                  orderId,
+                  prezzoFinale: total.toFixed(2),
+                });
               });
             },
           );
