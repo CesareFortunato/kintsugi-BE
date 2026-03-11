@@ -6,6 +6,14 @@ function index(req, res) {
   //Chiamata all'index con gestione di errore
   connection.query(sql, (err, results) => {
     if (err) return res.status(500).json({ error: "Database query failed" });
+    results = results.map((product) => {
+      return {
+        ...product,
+
+        product_image_url: `http://localhost:3000/img/${product.product_image_url}`,
+      };
+    });
+
     res.json(results);
   });
 }
