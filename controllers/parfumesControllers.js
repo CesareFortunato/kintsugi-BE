@@ -109,4 +109,59 @@ function getNote(req, res) {
   });
 }
 
-module.exports = { index, show, getNote };
+function related(req, res) {
+  const { public_slug } = req.params;
+
+  const productSql = "SELECT * FROM products WHERE public_slug = ?";
+
+  connection.query(productSql, [public_slug], (err, productResult) => {
+    if (err) return res.status(500).json({ error: "Database query failed" });
+    if (productResult.length === 0) {
+      return res.status(404).json({ error: "Nessun profumo trovato" });
+    }
+
+    const product = productResult[0];
+    const productId = product.id;
+
+    const notesSql = `
+      SELECT note_id
+      FROM note_product
+      WHERE product_id = ?
+    `;
+
+    connection.query(notesSql, [productId], (err, noteResults) => {
+      if (err) return res.status(500).json({ error: "Database query failed" });
+
+      if (noteResults.length === 0) {
+        return res.json([]);
+      }
+
+      const noteIds = noteResults.map((note) => note.note_id);
+
+      const relatedSql = `
+        SELECT products.*, COUNT(*) AS common_notes
+        FROM products
+        JOIN note_product ON products.id = note_product.product_id
+        WHERE note_product.note_id IN (?)
+          AND products.id != ?
+        GROUP BY products.id
+        ORDER BY common_notes DESC
+      `;
+
+      connection.query(relatedSql, [noteIds, productId], (err, relatedResults) => {
+        if (err) return res.status(500).json({ error: "Database query failed" });
+
+        const formattedResults = relatedResults.map((product) => {
+          return {
+            ...product,
+            product_image_url: `http://localhost:3000/img/${product.product_image_url}`,
+          };
+        });
+
+        res.json(formattedResults);
+      });
+    });
+  });
+}
+
+module.exports = { index, show, getNote, related };
