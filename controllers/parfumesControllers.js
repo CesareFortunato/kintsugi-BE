@@ -208,7 +208,7 @@ function search(req, res) {
   }
 
   if (notes) {
-    sql += " AND notes.name LIKE ?"; // Cerca per nome della nota (es. 'bergamotto')
+    sql += " AND notes.name LIKE ?";
     params.push(`%${notes}%`);
   }
 
