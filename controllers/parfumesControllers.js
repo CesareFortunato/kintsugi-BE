@@ -148,20 +148,82 @@ function related(req, res) {
         ORDER BY common_notes DESC
       `;
 
-      connection.query(relatedSql, [noteIds, productId], (err, relatedResults) => {
-        if (err) return res.status(500).json({ error: "Database query failed" });
+      connection.query(
+        relatedSql,
+        [noteIds, productId],
+        (err, relatedResults) => {
+          if (err)
+            return res.status(500).json({ error: "Database query failed" });
 
-        const formattedResults = relatedResults.map((product) => {
-          return {
-            ...product,
-            product_image_url: `http://localhost:3000/img/${product.product_image_url}`,
-          };
-        });
+          const formattedResults = relatedResults.map((product) => {
+            return {
+              ...product,
+              product_image_url: `http://localhost:3000/img/${product.product_image_url}`,
+            };
+          });
 
-        res.json(formattedResults);
-      });
+          res.json(formattedResults);
+        },
+      );
     });
   });
 }
 
-module.exports = { index, show, getNote, related };
+function search(req, res) {
+  const { name, min_price, max_price, family, note_id } = req.query;
+
+  let sql = `
+    SELECT DISTINCT products.* 
+    FROM products
+    LEFT JOIN note_product ON products.id = note_product.product_id
+    LEFT JOIN notes ON note_product.note_id = notes.id
+    WHERE 1=1
+  `;
+
+  const params = [];
+
+  if (name) {
+    sql += " AND products.name LIKE ?";
+    params.push(`%${name}%`);
+  }
+
+  if (min_price) {
+    sql += " AND products.price >= ?";
+    params.push(parseFloat(min_price));
+  }
+
+  if (max_price) {
+    sql += " AND products.price <= ?";
+    params.push(parseFloat(max_price));
+  }
+
+  if (family) {
+    sql += " AND notes.family = ?";
+    params.push(family);
+  }
+
+  if (note_id) {
+    sql += " AND notes.id = ?";
+    params.push(note_id);
+  }
+
+  connection.query(sql, params, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Errore durante la ricerca" });
+    }
+
+    const formattedResults = results.map((product) => {
+      return {
+        ...product,
+        product_image_url: product.product_image_url
+          ? `http://localhost:3000/img/${product.product_image_url}`
+          : null,
+      };
+    });
+
+    res.json(formattedResults);
+  });
+}
+
+module.exports = { index, show, getNote, related, search };
