@@ -170,7 +170,7 @@ function related(req, res) {
 }
 
 function search(req, res) {
-  const { name, min_price, max_price, family, note_id } = req.query;
+  const { name, min_price, max_price, family, note_id, notes } = req.query;
 
   let sql = `
     SELECT DISTINCT products.* 
@@ -205,6 +205,11 @@ function search(req, res) {
   if (note_id) {
     sql += " AND notes.id = ?";
     params.push(note_id);
+  }
+
+  if (notes) {
+    sql += " AND notes.name LIKE ?"; // Cerca per nome della nota (es. 'bergamotto')
+    params.push(`%${notes}%`);
   }
 
   connection.query(sql, params, (err, results) => {
