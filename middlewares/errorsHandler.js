@@ -3,7 +3,6 @@ function errorsHandler(err, req, res, next) {
 
   res.json({
     error: err.message,
-    message: "Errore dal server",
   });
 }
 
