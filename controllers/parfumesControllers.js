@@ -170,51 +170,82 @@ function related(req, res) {
 }
 
 function search(req, res) {
-  const { name, min_price, max_price, family, note_id, notes } = req.query;
+  const {
+    name,
+    min_price,
+    max_price,
+    family,
+    note_name,
+    note_type,
+    sortBy,
+  } = req.query;
 
   let sql = `
-    SELECT DISTINCT products.* 
+    SELECT DISTINCT products.*
     FROM products
     LEFT JOIN note_product ON products.id = note_product.product_id
     LEFT JOIN notes ON note_product.note_id = notes.id
-    WHERE 1=1
+    WHERE 1 = 1
   `;
 
   const params = [];
 
-  if (name) {
-    sql += " AND products.name LIKE ?";
-    params.push(`%${name}%`);
+  // filtro per nome profumo
+  if (name && name.trim() !== "") {
+    sql += " AND LOWER(products.name) LIKE ?";
+    params.push(`%${name.trim().toLowerCase()}%`);
   }
 
-  if (min_price) {
+  // filtro per prezzo minimo
+  if (min_price && min_price !== "") {
     sql += " AND products.price >= ?";
     params.push(parseFloat(min_price));
   }
 
-  if (max_price) {
+  // filtro per prezzo massimo
+  if (max_price && max_price !== "") {
     sql += " AND products.price <= ?";
     params.push(parseFloat(max_price));
   }
 
-  if (family) {
+  // filtro per famiglia olfattiva
+  if (family && family.trim() !== "") {
     sql += " AND notes.family = ?";
-    params.push(family);
+    params.push(family.trim());
   }
 
-  if (note_id) {
-    sql += " AND notes.id = ?";
-    params.push(note_id);
+  // filtro per nome essenza / nota
+  if (note_name && note_name.trim() !== "") {
+    sql += " AND LOWER(notes.name) LIKE ?";
+    params.push(`%${note_name.trim().toLowerCase()}%`);
   }
 
-  if (notes) {
-    sql += " AND notes.name LIKE ?";
-    params.push(`%${notes}%`);
+  // filtro per tipo nota: testa / cuore / base
+  if (note_type && note_type.trim() !== "") {
+    sql += " AND notes.note_type = ?";
+    params.push(note_type.trim());
+  }
+
+  // ordinamento
+  if (sortBy === "name-asc") {
+    sql += " ORDER BY products.name ASC";
+  } else if (sortBy === "name-desc") {
+    sql += " ORDER BY products.name DESC";
+  } else if (sortBy === "price-asc") {
+    sql += " ORDER BY products.price ASC";
+  } else if (sortBy === "price-desc") {
+    sql += " ORDER BY products.price DESC";
+  } else if (sortBy === "size-asc") {
+    sql += " ORDER BY products.size_ml ASC";
+  } else if (sortBy === "size-desc") {
+    sql += " ORDER BY products.size_ml DESC";
+  } else {
+    sql += " ORDER BY products.name ASC";
   }
 
   connection.query(sql, params, (err, results) => {
     if (err) {
-      console.error(err);
+      console.error("SEARCH ERROR:", err);
       return res.status(500).json({ error: "Errore durante la ricerca" });
     }
 
