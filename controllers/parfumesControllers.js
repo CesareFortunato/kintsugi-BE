@@ -100,10 +100,10 @@ function getNote(req, res) {
         //ritorno qua con lo spread gli array di objs e aggiungo la proprietà notes ai singoli obj
         return {
           ...product,
+          product_image_url: `http://localhost:3000/img/${product.product_image_url}`,
           notes: notesResults.filter((n) => n.product_id === product.id),
         };
       });
-
       res.json(results);
     });
   });
