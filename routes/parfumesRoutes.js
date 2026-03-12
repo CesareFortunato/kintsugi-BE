@@ -4,6 +4,8 @@ const router = express.Router();
 const parfumesControllers = require("../controllers/parfumesControllers");
 
 router.get("/", parfumesControllers.index);
+
+router.get("/search", parfumesControllers.search);
 //utilizzo il public slug invece dell'id perché messo nel db
 router.get("/:public_slug", parfumesControllers.show);
 //e metto le note sempre nella rotta delle profuziomazioni sperando sia coerente comunque
