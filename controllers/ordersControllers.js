@@ -11,15 +11,17 @@ async function store(req, res) {
     items.forEach((item) => {
       const discountedPrice = item.price * (1 - (item.discount_value || 0) / 100);
       subtotal += discountedPrice * item.qty;
-
       itemsToInsert.push([null, item.id, item.name, item.qty, discountedPrice]);
     });
 
     const shippingCost = subtotal >= 200 ? 0 : 5;
     const total = subtotal + shippingCost;
 
-    const sqlOrder = `INSERT INTO orders (customer_email, customer_first_name, customer_last_name, subtotal, shipping, total, status, placed_at) 
-                      VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())`;
+    const sqlOrder = `
+      INSERT INTO orders 
+        (customer_email, customer_first_name, customer_last_name, subtotal, shipping, total, status, placed_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())
+    `;
 
     connection.query(
       sqlOrder,
@@ -39,7 +41,11 @@ async function store(req, res) {
 
         const orderId = result.insertId;
 
-        const sqlShipping = `INSERT INTO order_shipping_addresses (order_id, country, city, postal_code, address_line1) VALUES (?, ?, ?, ?, ?)`;
+        const sqlShipping = `
+          INSERT INTO order_shipping_addresses 
+            (order_id, country, city, postal_code, address_line1) 
+          VALUES (?, ?, ?, ?, ?)
+        `;
         connection.query(
           sqlShipping,
           [
@@ -50,7 +56,11 @@ async function store(req, res) {
             shipping.address,
           ],
           () => {
-            const sqlBilling = `INSERT INTO order_billing_addresses (order_id, country, city, postal_code, address_line1, vat_number) VALUES (?, ?, ?, ?, ?, ?)`;
+            const sqlBilling = `
+              INSERT INTO order_billing_addresses 
+                (order_id, country, city, postal_code, address_line1, vat_number) 
+              VALUES (?, ?, ?, ?, ?, ?)
+            `;
             connection.query(
               sqlBilling,
               [
@@ -67,7 +77,11 @@ async function store(req, res) {
                   return row;
                 });
 
-                const sqlItems = `INSERT INTO order_items (order_id, product_id, product_name, qty, unit_price) VALUES ?`;
+                const sqlItems = `
+                  INSERT INTO order_items 
+                    (order_id, product_id, product_name, qty, unit_price) 
+                  VALUES ?
+                `;
 
                 connection.query(sqlItems, [finalItems], async (err) => {
                   if (err) {
@@ -75,24 +89,26 @@ async function store(req, res) {
                     return res.status(500).json({ error: "Errore Prodotti" });
                   }
 
-                  // LOG IMPORTANTI
-                  console.log("INVIO EMAIL A:", customer.email);
-                  console.log("ORDER ID:", orderId);
-                  console.log("TOTAL:", total);
+                  console.log("INVIO EMAIL CLIENTE E VENDITORE");
 
-                  // INVIO EMAIL
-                  await sendOrderEmail({
-                    id: orderId,
-                    email: customer.email,
-                    name: `${customer.firstName} ${customer.lastName}`,
-                    address: `${shipping.address}, ${shipping.city}, ${shipping.country}, ${shipping.zip}`,
-                    total: total,
-                    products: items.map(item => ({
-                      name: item.name,
-                      price: (item.price * (1 - (item.discount_value || 0) / 100)).toFixed(2),
-                      qty: item.qty
-                    }))
-                  });
+                  // invio mail in try/catch per non bloccare il checkout
+                  try {
+                    await sendOrderEmail({
+                      id: orderId,
+                      email: customer.email, // cliente
+                      name: `${customer.firstName} ${customer.lastName}`,
+                      address: `${shipping.address}, ${shipping.city}, ${shipping.country}, ${shipping.zip}`,
+                      total: total,
+                      products: items.map(item => ({
+                        name: item.name,
+                        price: (item.price * (1 - (item.discount_value || 0) / 100)).toFixed(2),
+                        qty: item.qty
+                      }))
+                    });
+                    console.log("EMAIL INVIATE ALLA STESSA INBOX SVILUPPO");
+                  } catch (mailError) {
+                    console.error("ERRORE INVIO MAIL:", mailError);
+                  }
 
                   res.status(201).json({
                     message: "Ordine creato con successo!",
@@ -111,7 +127,7 @@ async function store(req, res) {
     res.status(500).json({ error: "Errore durante il checkout" });
   }
 }
-      
+
 function show(req, res) {
   const { id } = req.params;
   const sqlOrder = `SELECT * FROM orders WHERE id = ?`;
@@ -133,4 +149,5 @@ function show(req, res) {
     });
   });
 }
+
 module.exports = { store, show };
