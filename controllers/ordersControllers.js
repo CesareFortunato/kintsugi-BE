@@ -1,4 +1,5 @@
 const connection = require("../data/db");
+const { sendOrderEmail } = require("../services/mailService");
 
 function store(req, res) {
   const { customer, shipping, billing, items } = req.body;
@@ -64,9 +65,15 @@ function store(req, res) {
 
               const sqlItems = `INSERT INTO order_items (order_id, product_id, product_name, qty, unit_price) VALUES ?`;
 
-              connection.query(sqlItems, [finalItems], (err) => {
+              connection.query(sqlItems, [finalItems], async (err) => {
                 if (err)
                   return res.status(500).json({ error: "Errore Prodotti" });
+
+                await sendOrderEmail({
+                  email: customer.email,
+                  id: orderId,
+                  total: total
+                });
 
                 res.status(201).json({
                   message: "Ordine creato con successo!",
