@@ -15,7 +15,10 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+<<<<<<< HEAD
     "express-validator": "^7.3.1",
+=======
+>>>>>>> 2d1d1081c8a7d73009499bb85b6759767f8eaa29
     "mysql2": "^3.19.0",
     "nodemailer": "^8.0.2"
   }
