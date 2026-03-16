@@ -14,7 +14,6 @@ const discountRoutes = require("./routes/discountRoutes");
 app.use(express.static("public"));
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
-app.use(express.static("public/img"));
 
 app.get("/", (req, res) => {
   res.send("ciaone");

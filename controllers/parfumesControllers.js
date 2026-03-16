@@ -18,12 +18,8 @@ function index(req, res) {
   });
 }
 
-//funzione show del singolo prodotto
 function show(req, res) {
-  //utilizzo del public slug nella query
   const { public_slug } = req.params;
-
-  //Seleziono tutto dai prodotti con un determinato public slug
   const parfumesSql = "SELECT * FROM products WHERE public_slug = ?";
 
   connection.query(parfumesSql, [public_slug], (err, parfumeResult) => {
@@ -31,31 +27,26 @@ function show(req, res) {
     if (parfumeResult.length === 0)
       return res.status(404).json({ error: "Profumo non trovato" });
 
-    //ritorno l'obj e il suo id
     const parfume = parfumeResult[0];
     const parfumeId = parfume.id;
-
-    //recupero imgs allegate tramite id
-    const imagesSql = "SELECT * FROM  product_images WHERE product_id = ? ";
+    const imagesSql = "SELECT * FROM product_images WHERE product_id = ?";
     connection.query(imagesSql, [parfumeId], (err, imageResult) => {
       if (err) return res.status(500).json({ error: "Database query failed" });
-      //aggiungo una nuova proprietà all'oggetto parfume
       parfume.images = imageResult;
-
-      //seleziono le colonne che appartengono alla tabella notes e faccio join con la tabella pivot
+      // 2. Recupero le note (DENTRO la callback delle immagini)
       const notesSql = `
         SELECT notes.* 
         FROM notes
         JOIN note_product ON notes.id = note_product.note_id
         WHERE note_product.product_id = ?
       `;
+
       connection.query(notesSql, [parfumeId], (err, notesResult) => {
         if (err)
           return res.status(500).json({ error: "Database query failed" });
 
-        //aggungo proprietà note all'obj parfume
         parfume.notes = notesResult;
-        //ritorno l'obj
+
         res.json(parfume);
       });
     });
@@ -170,15 +161,8 @@ function related(req, res) {
 }
 
 function search(req, res) {
-  const {
-    name,
-    min_price,
-    max_price,
-    family,
-    note_name,
-    note_type,
-    sortBy,
-  } = req.query;
+  const { name, min_price, max_price, family, note_name, note_type, sortBy } =
+    req.query;
 
   let sql = `
     SELECT DISTINCT products.*

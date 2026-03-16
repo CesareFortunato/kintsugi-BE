@@ -1,5 +1,4 @@
 const connection = require("../data/db");
-
 function store(req, res) {
   const { customer, shipping, billing, items } = req.body;
 
