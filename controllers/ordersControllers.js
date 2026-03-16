@@ -1,20 +1,16 @@
 const connection = require("../data/db");
-<<<<<<< HEAD
-function store(req, res) {
-  const { customer, shipping, billing, items } = req.body;
-=======
 const { sendOrderEmail } = require("../services/mailService");
 
 async function store(req, res) {
   try {
     const { customer, shipping, billing, items } = req.body;
->>>>>>> 2d1d1081c8a7d73009499bb85b6759767f8eaa29
 
     let subtotal = 0;
     const itemsToInsert = [];
 
     items.forEach((item) => {
-      const discountedPrice = item.price * (1 - (item.discount_value || 0) / 100);
+      const discountedPrice =
+        item.price * (1 - (item.discount_value || 0) / 100);
       subtotal += discountedPrice * item.qty;
       itemsToInsert.push([null, item.id, item.name, item.qty, discountedPrice]);
     });
@@ -104,11 +100,14 @@ async function store(req, res) {
                       name: `${customer.firstName} ${customer.lastName}`,
                       address: `${shipping.address}, ${shipping.city}, ${shipping.country}, ${shipping.zip}`,
                       total: total,
-                      products: items.map(item => ({
+                      products: items.map((item) => ({
                         name: item.name,
-                        price: (item.price * (1 - (item.discount_value || 0) / 100)).toFixed(2),
-                        qty: item.qty
-                      }))
+                        price: (
+                          item.price *
+                          (1 - (item.discount_value || 0) / 100)
+                        ).toFixed(2),
+                        qty: item.qty,
+                      })),
                     });
                     console.log("EMAIL INVIATE ALLA STESSA INBOX SVILUPPO");
                   } catch (mailError) {
@@ -118,7 +117,7 @@ async function store(req, res) {
                   res.status(201).json({
                     message: "Ordine creato con successo!",
                     orderId,
-                    prezzoFinale: total.toFixed(2)
+                    prezzoFinale: total.toFixed(2),
                   });
                 });
               },
