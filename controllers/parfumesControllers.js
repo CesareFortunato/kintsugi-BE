@@ -53,11 +53,20 @@ function show(req, res) {
     connection.query(imagesSql, [productId], (err, imageResult) => {
       if (err) return res.status(500).json({ error: "Database query failed" });
 
-      // formattiamo le immagini secondarie con path completo
+      // formattiamo le immagini secondarie usando il path già salvato nel db
+      // senza aggiungere "/img", così evitiamo duplicazioni tipo "/img/img/..."
       product.images = imageResult.map((image) => {
+        let cleanUrl = image.url ? image.url.replace(/^\/+/, "") : null;
+
+        // rimuoviamo "img/" se presente
+        cleanUrl = cleanUrl ? cleanUrl.replace(/^img\//, "") : null;
+
+        // rimuoviamo "products/" perché i file NON sono in quella cartella
+        cleanUrl = cleanUrl ? cleanUrl.replace(/^products\//, "") : null;
+
         return {
           ...image,
-          url: image.url ? `http://localhost:3000/img/${image.url}` : null,
+          url: cleanUrl ? `http://localhost:3000/img/${cleanUrl}` : null,
         };
       });
 
