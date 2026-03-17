@@ -8,11 +8,13 @@ function index(req, res) {
   connection.query(sql, (err, results) => {
     if (err) return res.status(500).json({ error: "Database query failed" });
 
-    // aggiungiamo il path completo all'immagine di ogni prodotto
+    // aggiungiamo il path completo all'immagine principale di ogni prodotto
     results = results.map((product) => {
       return {
         ...product,
-        product_image_url: `http://localhost:3000/img/${product.product_image_url}`,
+        product_image_url: product.product_image_url
+          ? `http://localhost:3000/img/${product.product_image_url}`
+          : null,
       };
     });
 
@@ -25,29 +27,48 @@ function show(req, res) {
   // recuperiamo lo slug pubblico dalla rotta
   const { public_slug } = req.params;
 
-  // query per recuperare il singolo profumo
-  const parfumesSql = "SELECT * FROM products WHERE public_slug = ?";
+  // query per recuperare il singolo prodotto
+  const productSql = "SELECT * FROM products WHERE public_slug = ?";
 
-  connection.query(parfumesSql, [public_slug], (err, parfumeResult) => {
+  connection.query(productSql, [public_slug], (err, productResult) => {
     if (err) return res.status(500).json({ error: "Database query failed" });
 
-    // se il profumo non esiste restituiamo 404
-    if (parfumeResult.length === 0) {
+    // se il prodotto non esiste restituiamo 404
+    if (productResult.length === 0) {
       return res.status(404).json({ error: "Profumo non trovato" });
     }
 
     // salviamo il prodotto trovato e il suo id
-    const parfume = parfumeResult[0];
-    const parfumeId = parfume.id;
+    const product = productResult[0];
+    const productId = product.id;
+
+    // formattiamo subito l'immagine principale del prodotto
+    product.product_image_url = product.product_image_url
+      ? `http://localhost:3000/img/${product.product_image_url}`
+      : null;
 
     // query per recuperare le immagini collegate al prodotto
     const imagesSql = "SELECT * FROM product_images WHERE product_id = ?";
 
-    connection.query(imagesSql, [parfumeId], (err, imageResult) => {
+    connection.query(imagesSql, [productId], (err, imageResult) => {
       if (err) return res.status(500).json({ error: "Database query failed" });
 
-      // aggiungiamo le immagini al prodotto
-      parfume.images = imageResult;
+      // formattiamo le immagini secondarie usando il path già salvato nel db
+      // senza aggiungere "/img", così evitiamo duplicazioni tipo "/img/img/..."
+      product.images = imageResult.map((image) => {
+        let cleanUrl = image.url ? image.url.replace(/^\/+/, "") : null;
+
+        // rimuoviamo "img/" se presente
+        cleanUrl = cleanUrl ? cleanUrl.replace(/^img\//, "") : null;
+
+        // rimuoviamo "products/" perché i file NON sono in quella cartella
+        cleanUrl = cleanUrl ? cleanUrl.replace(/^products\//, "") : null;
+
+        return {
+          ...image,
+          url: cleanUrl ? `http://localhost:3000/img/${cleanUrl}` : null,
+        };
+      });
 
       // query per recuperare le note collegate al prodotto
       const notesSql = `
@@ -57,16 +78,16 @@ function show(req, res) {
         WHERE note_product.product_id = ?
       `;
 
-      connection.query(notesSql, [parfumeId], (err, notesResult) => {
+      connection.query(notesSql, [productId], (err, notesResult) => {
         if (err) {
           return res.status(500).json({ error: "Database query failed" });
         }
 
         // aggiungiamo le note al prodotto
-        parfume.notes = notesResult;
+        product.notes = notesResult;
 
         // restituiamo il prodotto completo
-        res.json(parfume);
+        res.json(product);
       });
     });
   });
@@ -111,7 +132,9 @@ function getNote(req, res) {
       const results = productsResults.map((product) => {
         return {
           ...product,
-          product_image_url: `http://localhost:3000/img/${product.product_image_url}`,
+          product_image_url: product.product_image_url
+            ? `http://localhost:3000/img/${product.product_image_url}`
+            : null,
           notes: notesResults.filter((n) => n.product_id === product.id),
         };
       });
@@ -178,11 +201,13 @@ function related(req, res) {
             return res.status(500).json({ error: "Database query failed" });
           }
 
-          // aggiungiamo il path completo dell'immagine
+          // aggiungiamo il path completo dell'immagine principale
           const formattedResults = relatedResults.map((product) => {
             return {
               ...product,
-              product_image_url: `http://localhost:3000/img/${product.product_image_url}`,
+              product_image_url: product.product_image_url
+                ? `http://localhost:3000/img/${product.product_image_url}`
+                : null,
             };
           });
 
@@ -263,10 +288,8 @@ function search(req, res) {
   } else if (sortBy === "name-desc") {
     sql += " ORDER BY products.name DESC";
   } else if (sortBy === "price-asc") {
-    // ordiniamo sul prezzo effettivo, non sul prezzo pieno
     sql += ` ORDER BY ${effectivePriceSql} ASC`;
   } else if (sortBy === "price-desc") {
-    // ordiniamo sul prezzo effettivo, non sul prezzo pieno
     sql += ` ORDER BY ${effectivePriceSql} DESC`;
   } else if (sortBy === "size-asc") {
     sql += " ORDER BY products.size_ml ASC";
@@ -284,7 +307,7 @@ function search(req, res) {
       return res.status(500).json({ error: "Errore durante la ricerca" });
     }
 
-    // formattiamo i risultati aggiungendo il path completo dell'immagine
+    // formattiamo i risultati aggiungendo il path completo dell'immagine principale
     const formattedResults = results.map((product) => {
       return {
         ...product,
