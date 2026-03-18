@@ -108,6 +108,10 @@ function getNote(req, res) {
 
   connection.query(sql, [noteId], (err, productsResults) => {
     if (err) return res.status(500).json({ error: "Database query failed" });
+    console.log(
+      "Prodotti trovati nel DB:",
+      productsResults.map((p) => p.name),
+    );
 
     // se non troviamo prodotti restituiamo 404
     if (productsResults.length === 0) {
