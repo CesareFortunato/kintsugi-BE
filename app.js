@@ -2,17 +2,20 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const port = process.env.PORT;
+
+const port = process.env.PORT || 3000;
+
 const notFound = require("./middlewares/notFound");
 const errorsHandler = require("./middlewares/errorsHandler");
-//importo i routes
+
+// importo i routes
 const parfumesRoutes = require("./routes/parfumesRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
 const discountRoutes = require("./routes/discountRoutes");
 
-//middlewares
+// middlewares
 app.use(express.static("public"));
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -25,6 +28,7 @@ app.use("/discount", discountRoutes);
 
 app.use(errorsHandler);
 app.use(notFound);
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
